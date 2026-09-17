@@ -1,15 +1,15 @@
 from fastapi import FastAPI
+from app.docs import DESCRIPTION
 
-from app.routers import categories, products
+
 
 
 app = FastAPI(
     title="FastAPI Интернет-магазин",
+    summary="Corp application for booking of a meeting room",
+    description=DESCRIPTION,
     version="1.0.0",
 )
-
-app.include_router(categories.router)
-app.include_router(products.router)
 
 
 @app.get("/", tags=["common"],)
