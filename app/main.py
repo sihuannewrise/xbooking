@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.docs import DESCRIPTION
+from app.docs import XBOOKING_DESC
 
 
 
@@ -7,7 +7,7 @@ from app.docs import DESCRIPTION
 app = FastAPI(
     title="FastAPI Интернет-магазин",
     summary="Corp application for booking of a meeting room",
-    description=DESCRIPTION,
+    description=XBOOKING_DESC,
     version="1.0.0",
 )
 
