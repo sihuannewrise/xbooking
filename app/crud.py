@@ -29,10 +29,14 @@ async def update_message(message_id: int, message: str = Body(...)) -> str:
     messages_db[message_id] = message
     return "Message updated!"
 
-@app.delete("/messages/{message_id}")
+@app.delete("/messages/{message_id}", status_code=status.HTTP_200_OK)
 async def delete_message(message_id: int) -> str:
-    pass
+    if message_id not in messages_db:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Message not found")
+    messages_db.pop(message_id)
+    return f"Message ID={message_id} deleted!"
 
-@app.delete("/messages")
+@app.delete("/messages", status_code=status.HTTP_200_OK)
 async def delete_messages() -> str:
-    pass
+    messages_db.clear()
+    return "All messages deleted!"
