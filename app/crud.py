@@ -67,8 +67,31 @@ async def delete_messages() -> dict:
     return {"detail": "All messages deleted!"}
 
 
+
+
+
+
 @app.get("/web/messages", response_class=HTMLResponse)
 async def get_messages_page(request: Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="index.html",
+        context={"messages": messages_db},
+    )
+
+@app.get("/web/messages/create", response_class=HTMLResponse)
+async def get_create_message_page(request: Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="create.html"
+    )
+
+
+@app.post("/web/messages", response_class=HTMLResponse)
+async def create_message_form(request: Request, content: str = Form(...)):
+    next_id = max((msg.id for msg in messages_db), default=-1) + 1
+    new_message = Message(id=next_id, content=content)
+    messages_db.append(new_message)
     return templates.TemplateResponse(
         request=request,
         name="index.html",
