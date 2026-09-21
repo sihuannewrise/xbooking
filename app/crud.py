@@ -1,19 +1,25 @@
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException, status, Form, Request
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 
 app = FastAPI()
 
+templates = Jinja2Templates(directory="templates")
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
 
 class MessageCreate(BaseModel):
     content: str
+
 
 class Message(BaseModel):
     id: int
     content: str
 
-
-messages_db: list[Message] = [Message(id=0, content="First post in FastAPI")]
+messages_db: list[Message] = [Message(id=0, content="Первое сообщение в FastAPI")]
 
 
 @app.get("/messages", response_model=list[Message])
@@ -59,3 +65,12 @@ async def delete_message(message_id: int) -> dict:
 async def delete_messages() -> dict:
     messages_db.clear()
     return {"detail": "All messages deleted!"}
+
+
+@app.get("/web/messages", response_class=HTMLResponse)
+async def get_messages_page(request: Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="index.html",
+        context={"messages": messages_db},
+    )
