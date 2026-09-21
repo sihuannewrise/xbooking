@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block title %}Создать сообщение{% endblock %}
+
+
+{% block body %}
+    <h1>Создать новое сообщение</h1>
+    <form action="/web/messages" method="post">
+        <label for="content">Сообщение:</label>
+        <textarea id="content" name="content" required></textarea>
+        <button type="submit">Отправить</button>
+    </form>
+    <a href="/web/messages">Вернуться к списку</a>
+{% endblock %}

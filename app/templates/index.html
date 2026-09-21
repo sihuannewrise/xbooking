@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block title %}Список сообщений{% endblock %}
+
+{% block body %}
+    <h1>Список сообщений</h1>
+    <a href="/web/messages/create">Создать новое сообщение</a>
+    {% if messages %}
+        <ul>
+        {% for message in messages %}
+            <li>
+                <a href="/web/messages/{{ message.id }}">{{ message.content }}</a> (ID: {{ message.id }})
+            </li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>Сообщений пока нет.</p>
+    {% endif %}
+{% endblock %}

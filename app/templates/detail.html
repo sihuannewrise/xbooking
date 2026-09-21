@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+
+{% block title %}етали сообщения{% endblock %}
+
+{% block body %}
+    <h1>Детали сообщения</h1>
+    <p><strong>ID:</strong> {{ message.id }}</p>
+    <p><strong>Сообщение:</strong> {{ message.content }}</p>
+    <a href="/web/messages">Вернуться к списку</a>
+{% endblock %}
