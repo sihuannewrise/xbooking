@@ -4,9 +4,14 @@ from pydantic import BaseModel
 
 app = FastAPI()
 
+
+class MessageCreate(BaseModel):
+    content: str
+
 class Message(BaseModel):
     id: int
     content: str
+
 
 messages_db: list[Message] = [Message(id=0, content="First post in FastAPI")]
 
@@ -25,23 +30,21 @@ async def read_message(message_id: int) -> Message:
 
 
 @app.post("/messages", response_model=Message, status_code=status.HTTP_201_CREATED)
-async def create_message(message: Message) -> Message:
-    if any(msg.id == message.id for msg in messages_db):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="The message ID already exists")
-    messages_db.append(message)
-    return message
+async def create_message(message_create: MessageCreate) -> Message:
+    next_id = max((msg.id for msg in messages_db), default=-1) + 1
+    new_message = Message(id=next_id, content=message_create.content)
+    messages_db.append(new_message)
+    return new_message
 
 
 @app.put("/messages/{message_id}", status_code=status.HTTP_200_OK, response_model=Message)
-async def update_message(message_id: int, updated_message: Message) -> Message:
-    if updated_message.id != message_id:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="The ID in the request body must match the ID in the path")
+async def update_message(message_id: int, message_create: MessageCreate) -> Message:
     for i, message in enumerate(messages_db):
         if message.id == message_id:
+            updated_message = Message(id=message_id, content=message_create.content)
             messages_db[i] = updated_message
             return updated_message
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Message not found")
-
 
 @app.delete("/messages/{message_id}", status_code=status.HTTP_200_OK)
 async def delete_message(message_id: int) -> dict:
