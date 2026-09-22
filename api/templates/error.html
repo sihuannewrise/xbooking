@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ code }} — Ошибка{% endblock %}
+
+{% block body %}
+    <main class="error-page">
+        <h1 class="error-code">{{ code }}</h1>
+        <p class="error-message">{{ detail }}</p>
+        <a class="error-link" href="/web/messages">На главную</a>
+    </main>
+{% endblock %}

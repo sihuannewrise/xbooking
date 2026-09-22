@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.docs import XBOOKING_DESC
+from api.docs import XBOOKING_DESC
 
 
 app = FastAPI(
