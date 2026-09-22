@@ -74,6 +74,6 @@ async def get_doc_page(request: Request, name: str):
     html = markdown.markdown(md_text, extensions=["fenced_code", "tables"])
     return templates.TemplateResponse(
         request=request,
-        name="doc.html",
+        name="docs.html",
         context={"content": html},
     )
