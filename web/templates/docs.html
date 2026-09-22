@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+
+{% block title %}Документация{% endblock %}
+
+{% block body %}
+    <main class="doc-page">
+        {{ content | safe }}
+    </main>
+{% endblock %}

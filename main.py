@@ -1,5 +1,13 @@
+from pathlib import Path
+
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+
+from api import routes
 from api.docs import XBOOKING_DESC
+from web import pages
+
+BASE_DIR = Path(__file__).resolve().parent
 
 
 app = FastAPI(
@@ -22,9 +30,12 @@ app = FastAPI(
 )
 
 
-@app.get("/", tags=["common"],)
-async def root():
-    """
-    Корневой маршрут, подтверждающий, что API работает.
-    """
-    return {"message": "Добро пожаловать в API интернет-магазина!"}
+app.mount(
+    "/static",
+    StaticFiles(directory=BASE_DIR / "web" / "static"),
+    name="static",
+)
+
+app.include_router(routes.router)
+app.include_router(pages.router)
+app.include_router(pages.docs_router)
