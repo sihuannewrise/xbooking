@@ -1,1 +1,1 @@
-# fastapi-stepik
+# API for booking services
