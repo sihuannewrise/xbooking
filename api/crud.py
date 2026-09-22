@@ -104,8 +104,8 @@ async def get_message_detail_page(request: Request, message_id: int):
     if message is None:
         return templates.TemplateResponse(
             request=request,
-            name="404.html",
-            context={"detail": "Сообщение не найдено"},
+            name="error.html",
+            context={"code": 404, "detail": "Сообщение не найдено"},
             status_code=status.HTTP_404_NOT_FOUND,
         )
     return templates.TemplateResponse(
