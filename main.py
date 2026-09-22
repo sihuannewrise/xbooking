@@ -3,9 +3,8 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
-from web import pages
-from api import routes
-from api.docs_loader import XBOOKING_DESC
+from api import api_router
+from web import pages_router
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -36,6 +35,5 @@ app.mount(
     name="static",
 )
 
-app.include_router(routes.router)
-app.include_router(pages.router)
-app.include_router(pages.docs_router)
+app.include_router(api_router)
+app.include_router(pages_router)
