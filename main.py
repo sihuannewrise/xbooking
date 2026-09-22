@@ -5,7 +5,7 @@ from fastapi.staticfiles import StaticFiles
 
 from web import pages
 from api import routes
-from api.docs import XBOOKING_DESC
+from api.docs_loader import XBOOKING_DESC
 
 BASE_DIR = Path(__file__).resolve().parent
 

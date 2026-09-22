@@ -1,16 +1,10 @@
-from pathlib import Path
-
 import markdown
-from fastapi import APIRouter, Request, status
+from fastapi import APIRouter, Form, Request, status
 from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
 
-from api.docs import read_doc
+from api.docs_loader import read_doc
 from api import crud
-
-
-BASE_DIR = Path(__file__).resolve().parent
-templates = Jinja2Templates(directory=BASE_DIR / "templates")
+from web.templating import templates
 
 
 router = APIRouter(
