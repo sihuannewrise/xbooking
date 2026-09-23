@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -7,7 +7,6 @@ app = FastAPI(title="Messages CRUD")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -45,13 +44,13 @@ async def create_message(payload: MessageCreate) -> Message:
 
 @app.get("/messages/{message_id}", response_model=Message)
 async def get_message(message_id: int) -> Message:
-    if idx := get_index(message_id) < 0:
+    if (idx := get_index(message_id)) < 0:
         raise HTTPException(status_code=404, detail="Message not found")
     return messages_db[idx]
 
 @app.patch("/messages/{message_id}", response_model=Message)
 async def update_message(message_id: int, payload: MessageUpdate) -> Message:
-    if idx := get_index(message_id) < 0:
+    if (idx := get_index(message_id)) < 0:
         raise HTTPException(status_code=404, detail="Message not found")
     if payload.content is not None:
         messages_db[idx].content = payload.content
@@ -59,7 +58,7 @@ async def update_message(message_id: int, payload: MessageUpdate) -> Message:
 
 @app.put("/messages/{message_id}", response_model=Message)
 async def replace_message(message_id: int, payload: MessageCreate) -> Message:
-    if idx := get_index(message_id) < 0:
+    if (idx := get_index(message_id)) < 0:
         raise HTTPException(status_code=404, detail="Message not found")
     updated = Message(id=message_id, content=payload.content)
     messages_db[idx] = updated
@@ -67,6 +66,7 @@ async def replace_message(message_id: int, payload: MessageCreate) -> Message:
 
 @app.delete("/messages/{message_id}", status_code=204)
 async def delete_message(message_id: int):
-    if idx := get_index(message_id) < 0:
+    if (idx := get_index(message_id)) < 0:
         raise HTTPException(status_code=404, detail="Message not found")
     messages_db.pop(idx)
+    return Response(status_code=204)

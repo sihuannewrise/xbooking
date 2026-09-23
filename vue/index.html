@@ -6,9 +6,10 @@
   <title>Messages CRUD — Vue 3</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <style>[v-cloak] { display: none; }</style>
 </head>
 <body class="bg-slate-50 text-slate-900">
-  <div id="app" class="max-w-6xl mx-auto p-6 space-y-6">
+  <div id="app" v-cloak class="max-w-6xl mx-auto p-6 space-y-6">
     <header class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
       <h1 class="text-2xl font-bold">Messages CRUD — Vue 3</h1>
       <div class="flex items-center gap-2">
@@ -41,10 +42,20 @@
               </tr>
               <tr v-for="m in messages" :key="m.id">
                 <td class="py-2 pr-3 font-mono text-slate-600">#{{ m.id }}</td>
-                <td class="py-2 pr-3">{{ m.content }}</td>
+                <td class="py-2 pr-3">
+                  <div v-if="edit.row === m.id" class="flex gap-2">
+                    <input v-model.trim="edit.value" class="flex-1 px-2 py-1 rounded border border-slate-300" />
+                    <button @click="submitPut(m.id)" :disabled="loading.put" class="px-2 py-1 rounded bg-indigo-600 text-white">PUT</button>
+                    <button @click="submitPatch(m.id)" :disabled="loading.patch" class="px-2 py-1 rounded bg-amber-600 text-white">PATCH</button>
+                    <button @click="cancelEdit" class="px-2 py-1 rounded bg-slate-200">Отмена</button>
+                  </div>
+                  <div v-else>{{ m.content }}</div>
+                </td>
                 <td class="py-2 pr-3">
                   <div class="flex gap-2">
-                    <!-- Пока пусто -->
+                    <button @click="startEdit(m)" class="px-2 py-1 rounded bg-slate-100">Изм.</button>
+                    <button @click="remove(m.id)" :disabled="loading.del" class="px-2 py-1 rounded bg-rose-600 text-white">Удалить</button>
+                    <button @click="copyId(m.id)" class="px-2 py-1 rounded bg-slate-100">ID</button>
                   </div>
                 </td>
               </tr>
@@ -54,9 +65,39 @@
         <p v-if="msg.text" :class="msg.class" class="mt-3 text-sm">{{ msg.text }}</p>
       </div>
 
-      <!-- Правая панель пока пустая -->
-      <div class="bg-white rounded-2xl shadow p-4">
-        <!-- Операции будут позже -->
+      <!-- Create / Read / Delete by ID -->
+      <div class="bg-white rounded-2xl shadow p-4 space-y-4">
+        <h2 class="text-lg font-semibold">Операции</h2>
+
+        <div class="space-y-2">
+          <label class="text-sm">Создать сообщение</label>
+          <textarea v-model.trim="create.content" rows="3" class="w-full px-3 py-2 rounded border border-slate-300" placeholder="Текст..."></textarea>
+          <button @click="createMsg" :disabled="loading.post" class="px-3 py-2 rounded bg-emerald-600 text-white">
+            <span v-if="loading.post">Создаю…</span><span v-else>Создать</span>
+          </button>
+        </div>
+
+        <hr class="border-slate-200" />
+
+        <div class="space-y-2">
+          <label class="text-sm">Прочитать по ID</label>
+          <div class="flex gap-2">
+            <input v-model="read.id" type="number" class="px-3 py-2 rounded border border-slate-300 w-36" placeholder="ID" />
+            <button @click="readById" :disabled="loading.get" class="px-3 py-2 rounded bg-slate-900 text-white">GET</button>
+          </div>
+          <pre class="bg-slate-50 rounded p-3 text-xs overflow-x-auto min-h-[52px]">{{ read.result }}</pre>
+        </div>
+
+        <hr class="border-slate-200" />
+
+        <div class="space-y-2">
+          <label class="text-sm">Удалить по ID</label>
+          <div class="flex gap-2">
+            <input v-model="del.id" type="number" class="px-3 py-2 rounded border border-slate-300 w-36" placeholder="ID" />
+            <button @click="deleteById" :disabled="loading.del" class="px-3 py-2 rounded bg-rose-600 text-white">DELETE</button>
+          </div>
+          <p class="text-xs text-slate-600">Удаление безвозвратно</p>
+        </div>
       </div>
     </section>
 
@@ -64,51 +105,177 @@
   </div>
 
   <script>
-    const { createApp, reactive } = Vue;
+    const { createApp, ref, reactive } = Vue;
 
     createApp({
       setup() {
-        const s = reactive({
-          baseUrl: localStorage.getItem('messages_base_url') || 'http://localhost:8000',
-          messages: [],
-          loading: { list: false },
-          msg: { text: '', class: 'text-slate-600' },
-        });
+        // ---- state (каждое поле — отдельный ref, чтобы возвращать из setup напрямую) ----
+        const baseUrl = ref(localStorage.getItem('messages_base_url') || 'http://localhost:8000');
+        const messages = ref([]);
+        const loading = reactive({ list: false, get: false, post: false, put: false, patch: false, del: false });
+        const msg = reactive({ text: '', class: 'text-slate-600' });
+        const create = reactive({ content: '' });
+        const read = reactive({ id: null, result: '' });
+        const del = reactive({ id: null });
+        const edit = reactive({ row: null, value: '' });
+
+        let msgTimer = null;
 
         function setMsg(text, ok = true) {
-          s.msg.text = text;
-          s.msg.class = ok ? 'text-emerald-700' : 'text-rose-700';
-          if (text) setTimeout(() => { s.msg.text = ''; }, 3000);
+          msg.text = text;
+          msg.class = ok ? 'text-emerald-700' : 'text-rose-700';
+          if (msgTimer) clearTimeout(msgTimer);
+          if (text) msgTimer = setTimeout(() => { msg.text = ''; msgTimer = null; }, 3000);
         }
 
-        function buildUrl(path) { return s.baseUrl.replace(/\/$/, '') + path; }
+        function buildUrl(path) {
+          return baseUrl.value.replace(/\/$/, '') + path;
+        }
 
         async function api(path, { method = 'GET', body } = {}) {
+          const headers = { 'Accept': 'application/json' };
+          if (body !== undefined) headers['Content-Type'] = 'application/json';
+
           const res = await fetch(buildUrl(path), {
             method,
-            headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
-            body: body ? JSON.stringify(body) : undefined,
+            headers,
+            body: body !== undefined ? JSON.stringify(body) : undefined,
           });
+
           if (!res.ok) {
             let t = await res.text();
             try { const j = JSON.parse(t); t = j.detail || JSON.stringify(j); } catch {}
             throw new Error(`HTTP ${res.status} — ${t}`);
           }
-          return res.status === 204 ? null : res.json();
+          // 204 No Content — тела нет
+          if (res.status === 204) return null;
+          const text = await res.text();
+          return text ? JSON.parse(text) : null;
         }
 
+        // ---- helpers ----
+        function isBlankId(v) {
+          return v === null || v === undefined || v === '' || Number.isNaN(Number(v));
+        }
+
+        // ---- actions ----
         async function refresh() {
-          try { s.loading.list = true; s.messages = await api('/messages'); }
-          catch (e) { setMsg(e.message, false); }
-          finally { s.loading.list = false; }
+          try {
+            loading.list = true;
+            messages.value = await api('/messages');
+          } catch (e) {
+            setMsg(e.message, false);
+          } finally {
+            loading.list = false;
+          }
         }
 
-        function saveBaseUrl() { localStorage.setItem('messages_base_url', s.baseUrl); refresh(); }
+        async function createMsg() {
+          if (!create.content) return setMsg('Введите текст', false);
+          try {
+            loading.post = true;
+            const m = await api('/messages', { method: 'POST', body: { content: create.content } });
+            setMsg(`Создано #${m.id}`);
+            create.content = '';
+            await refresh();
+          } catch (e) {
+            setMsg(e.message, false);
+          } finally {
+            loading.post = false;
+          }
+        }
+
+        async function readById() {
+          if (isBlankId(read.id)) { read.result = 'Некорректный ID'; return; }
+          try {
+            loading.get = true;
+            const m = await api(`/messages/${Number(read.id)}`);
+            read.result = JSON.stringify(m, null, 2);
+          } catch (e) {
+            read.result = e.message;
+          } finally {
+            loading.get = false;
+          }
+        }
+
+        function startEdit(m) { edit.row = m.id; edit.value = m.content; }
+        function cancelEdit() { edit.row = null; edit.value = ''; }
+
+        async function submitPut(id) {
+          if (!edit.value) return setMsg('Текст не может быть пустым', false);
+          try {
+            loading.put = true;
+            await api(`/messages/${id}`, { method: 'PUT', body: { content: edit.value } });
+            setMsg(`Обновлено (PUT) #${id}`);
+            cancelEdit();
+            await refresh();
+          } catch (e) {
+            setMsg(e.message, false);
+          } finally {
+            loading.put = false;
+          }
+        }
+
+        async function submitPatch(id) {
+          if (!edit.value) return setMsg('Текст не может быть пустым', false);
+          try {
+            loading.patch = true;
+            await api(`/messages/${id}`, { method: 'PATCH', body: { content: edit.value } });
+            setMsg(`Обновлено (PATCH) #${id}`);
+            cancelEdit();
+            await refresh();
+          } catch (e) {
+            setMsg(e.message, false);
+          } finally {
+            loading.patch = false;
+          }
+        }
+
+        async function remove(id) {
+          if (!confirm(`Удалить сообщение #${id}?`)) return;
+          try {
+            loading.del = true;
+            await api(`/messages/${id}`, { method: 'DELETE' });
+            setMsg(`Удалено #${id}`);
+            await refresh();
+          } catch (e) {
+            setMsg(e.message, false);
+          } finally {
+            loading.del = false;
+          }
+        }
+
+        async function deleteById() {
+          if (isBlankId(del.id)) return setMsg('Некорректный ID', false);
+          await remove(Number(del.id));
+          del.id = null;
+        }
+
+        async function copyId(id) {
+          try {
+            await navigator.clipboard.writeText(String(id));
+            setMsg('ID скопирован');
+          } catch {
+            setMsg('Не удалось скопировать ID', false);
+          }
+        }
+
+        function saveBaseUrl() {
+          localStorage.setItem('messages_base_url', baseUrl.value);
+          refresh();
+        }
 
         // init
         refresh();
 
-        return { ...Vue.toRefs(s), refresh, saveBaseUrl };
+        return {
+          baseUrl, messages, loading, msg,
+          create, read, del, edit,
+          refresh, createMsg, readById,
+          startEdit, cancelEdit,
+          submitPut, submitPatch,
+          remove, deleteById, copyId, saveBaseUrl,
+        };
       }
     }).mount('#app');
   </script>
