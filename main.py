@@ -11,7 +11,7 @@ BASE_DIR = Path(__file__).resolve().parent
 
 
 app = FastAPI(
-    title="FastAPI project",
+    title="XBooking",
     summary="Corp application for booking of a meeting room",
     description=XBOOKING_DESC,
     version="1.0.0",
