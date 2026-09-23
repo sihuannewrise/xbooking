@@ -1,3 +1,4 @@
+import nh3
 import markdown
 from fastapi import APIRouter, Form, Request, status
 from fastapi.responses import HTMLResponse
@@ -72,6 +73,7 @@ async def get_doc_page(request: Request, name: str):
         )
 
     html = markdown.markdown(md_text, extensions=["fenced_code", "tables"])
+    html = nh3.clean(html)
     return templates.TemplateResponse(
         request=request,
         name="docs.html",

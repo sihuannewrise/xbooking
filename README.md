@@ -28,6 +28,7 @@ uvicorn main:app --reload
 | GET | /web/docs/{name} | страница с рендером markdown |
 
 Swagger: http://127.0.0.1:8000/docs
+
 Документация: http://127.0.0.1:8000/web/docs/xbooking
 
 ## Структура

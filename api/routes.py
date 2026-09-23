@@ -15,7 +15,7 @@ async def read_messages():
 async def read_message(message_id: int):
     msg = crud.get_by_id(message_id)
     if msg is None:
-        raise HTTPException(status_code=404, detail="Message not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Message not found")
     return msg
 
 
@@ -28,14 +28,14 @@ async def create_message(payload: MessageCreate):
 async def update_message(message_id: int, payload: MessageCreate):
     msg = crud.update(message_id, payload.content)
     if msg is None:
-        raise HTTPException(status_code=404, detail="Message not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Message not found")
     return msg
 
 
 @router.delete("/{message_id}")
 async def delete_message(message_id: int):
     if not crud.delete(message_id):
-        raise HTTPException(status_code=404, detail="Message not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Message not found")
     return {"detail": f"Message ID={message_id} deleted!"}
 
 
